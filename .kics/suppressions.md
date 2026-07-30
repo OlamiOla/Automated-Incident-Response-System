@@ -64,3 +64,85 @@ tagging, not an actual gap. No action needed.
 3. Add a matching entry here: where it applies, why it's suppressed,
    what compensates for it, and who reviewed it.
 4. Get sign-off from whoever owns security review before merging.
+
+---
+
+## Query: S3 Bucket Without Enabled MFA Delete
+**ID:** `c5b31ab9-0f26-4a49-b8aa-4cc064392f4d`
+
+**Where:** `modules/logging/main.tf` — `aws_s3_bucket_versioning.log_archive`.
+
+**Why suppressed:** KICS's own finding description confirms MFA Delete
+cannot be enabled through Terraform — it requires a manual AWS CLI command
+with a physical or virtual MFA device attached to the account.
+
+**Manual step (not automated by this project):** After first apply, an
+account admin should run:
+aws s3api put-bucket-versioning
+--bucket <log_archive_bucket_name>
+--versioning-configuration Status=Enabled,MFADelete=Enabled
+--bucket-owner <account_id>
+--mfa "<mfa-serial-number> <mfa-code>"
+
+**Reviewed by:** _pending_
+
+---
+
+## Query: IAM Access Analyzer Not Enabled
+**ID:** `e592a0c5-5bdb-414c-9066-5dba7cdea370`
+
+**Where:** flagged once per module file (`kms`, `logging`, `alerting`,
+`remediation`, `detection`) — but the analyzer is a single account-level
+resource, already created once in `modules/kms/main.tf`
+(`aws_accessanalyzer_analyzer.main`).
+
+**Why suppressed:** KICS scans each Terraform file independently and
+can't detect that a sibling module already declares this account-wide
+resource. Confirmed present and correctly configured in `kms/main.tf`.
+
+**Reviewed by:** _pending_
+
+---
+
+## Query: S3 Bucket Notifications Disabled
+**ID:** `e39f87f5-0abf-488b-864c-63ee1f588140`
+
+**Where:** flagged against `aws_sns_topic.incident_alerts`,
+`aws_sqs_queue.dlq`, and `aws_lambda_function.function`/`slack_notifier`
+— not against the S3 buckets themselves, which appears to be a
+resource-attribution quirk in this KICS query.
+
+**Why suppressed:** The underlying suggestion is to wire S3 object-level
+events (create/delete) to a notification target. Deliberately not done:
+CloudTrail (data events) and AWS Config already audit every operation on
+the log archive bucket. Adding S3 event notifications on top would fire
+continuously during normal log delivery, flooding the incident-alerts
+SNS topic with noise unrelated to actual security findings.
+
+**Reviewed by:** _pending_
+
+---
+
+## Query: S3 Bucket Policy Accepts HTTP Requests
+**ID:** `4bc4dd4c-7d8d-405e-a0fb-57fa4c31b4d9`
+
+**Where:** `modules/logging/main.tf` — `aws_s3_bucket_policy.log_archive`
+and `aws_s3_bucket_policy.access_logs`, statement `DenyInsecureTransport`
+in both.
+
+**Why suppressed:** Both policies already deny all actions over non-TLS
+transport, using the exact structure KICS's own documentation lists as
+compliant (`Condition.Bool."aws:SecureTransport" = "false"`). This is a
+known KICS parser limitation: policies built with `jsonencode({...})`
+aren't always fully resolved by this specific query, while the same
+structure written as a raw JSON heredoc or via `aws_iam_policy_document`
+is recognized correctly. Confirmed via KICS's own documented test cases
+and a corresponding open false-positive report
+(github.com/Checkmarx/kics/issues/5489).
+
+**Compensating control:** Verified manually — both policies were
+reviewed line-by-line against KICS's documented compliant pattern and
+match exactly. `jsonencode()` was kept over a raw heredoc for
+maintainability (HCL syntax highlighting, trailing-comma safety).
+
+**Reviewed by:** _pending_

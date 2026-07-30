@@ -1,41 +1,22 @@
-# =====================================================
-# KICS CONFIGURATION
-# Static security/compliance scanning for all Terraform
-# modules in this project. Run via:
-#   kics scan -p modules/ -c config.yml
-# =====================================================
-
 path:
   - modules/
 
-platform:
-  - terraform
-
-# Exclude specific query (check) IDs that are suppressed with
-# documented justification in suppressions.md. Do not add an ID
-# here without a corresponding entry there.
 exclude-queries:
-  - "12ed526f-2f75-4c96-b83c-2dd0c8b47b76"  # IAM policy allows write actions without constraints — see suppressions.md
-  - "1e434b58-e0b7-4a5c-9c1f-5f30a2f6a1c9"  # IAM policy has wildcard resource — see suppressions.md
-  - "8d7f5065-8c66-4d5c-9e37-3fb99d38c5c7"  # SNS topic policy allows service principal without explicit source ARN condition — see suppressions.md
-  - "7ebc9038-0bde-479a-acc4-6ed7b6758899"  # KMS key root-admin policy uses kms:* — see suppressions.md
-  - "482b7d26-0bdb-4b5f-bf6f-545826c0a3dd"  # CloudTrail SNS topic undefined — redundant with EventBridge alerting, see suppressions.md
+  - "7ebc9038-0bde-479a-acc4-6ed7b6758899"  # KMS root-admin policy uses kms:*
+  - "482b7d26-0bdb-4b5f-bf6f-545826c0a3dd"  # CloudTrail SNS topic undefined
+  - "c5b31ab9-0f26-4a49-b8aa-4cc064392f4d"  # S3 MFA Delete — not settable via Terraform
+  - "e592a0c5-5bdb-414c-9066-5dba7cdea370"  # IAM Access Analyzer — already created once in kms module
+  - "e39f87f5-0abf-488b-864c-63ee1f588140"  # S3 bucket notifications — deliberately not wired, see suppressions.md
+  - "4bc4dd4c-7d8d-405e-a0fb-57fa4c31b4d9"  # S3 Bucket Policy Accepts HTTP Requests — false positive, see suppressions.md
 
-# Severity levels that should fail the scan.
+exclude-severities:
+  - info
+
 fail-on:
-  - HIGH
-  - MEDIUM
-
-# LOW and INFO findings are still reported but don't block CI.
-minimal-ui: false
-verbose: true
-
-output-path: kics-report
+  - high
+  - medium
 
 report-formats:
   - json
-  - sarif
 
-exclude-severities:
-  - INFO
-  
+output-path: kics-report

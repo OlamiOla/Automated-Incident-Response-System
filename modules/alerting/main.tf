@@ -137,6 +137,11 @@ resource "aws_iam_role_policy" "slack_notifier" {
         Effect   = "Allow"
         Action   = ["kms:Decrypt"]
         Resource = var.secrets_kms_key_arn
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["sqs:SendMessage"]
+        Resource = aws_sqs_queue.slack_notifier_dlq[0].arn
       }
     ]
   })
@@ -157,6 +162,10 @@ resource "aws_lambda_function" "slack_notifier" {
 
   tracing_config {
     mode = "Active"
+  }
+
+  dead_letter_config {
+    target_arn = aws_sqs_queue.slack_notifier_dlq[0].arn
   }
 
   environment {
@@ -194,4 +203,15 @@ resource "aws_lambda_permission" "allow_sns" {
   function_name = aws_lambda_function.slack_notifier[0].function_name
   principal     = "sns.amazonaws.com"
   source_arn    = aws_sns_topic.incident_alerts.arn
+}
+
+resource "aws_sqs_queue" "slack_notifier_dlq" {
+  count = var.enable_slack_alerts ? 1 : 0
+
+  name                              = "${var.project_name}-${var.environment}-slack-notifier-dlq"
+  message_retention_seconds         = 1209600
+  kms_master_key_id                 = var.sns_kms_key_arn
+  kms_data_key_reuse_period_seconds = 300
+
+  tags = var.tags
 }

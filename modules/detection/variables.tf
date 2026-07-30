@@ -114,14 +114,11 @@ variable "eventbridge_target_role_arn" {
 }
 
 variable "config_rules" {
-  description = "List of AWS Config managed rule names to enable."
-  type        = list(string)
   default = [
     "s3-bucket-public-read-prohibited",
     "s3-bucket-public-write-prohibited",
     "iam-user-unused-credentials-check",
     "root-account-mfa-enabled",
     "restricted-ssh",
-    "encrypted-volumes"
   ]
 }

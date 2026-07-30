@@ -294,3 +294,17 @@ resource "aws_iam_role_policy" "cloudtrail_cloudwatch" {
     }]
   })
 }
+
+resource "aws_config_config_rule" "encrypted_volumes" {
+  count = var.enable_aws_config ? 1 : 0
+
+  name = "${var.project_name}-${var.environment}-encrypted-volumes"
+
+  source {
+    owner             = "AWS"
+    source_identifier = "ENCRYPTED_VOLUMES"
+  }
+
+  depends_on = [aws_config_configuration_recorder.main]
+  tags       = var.tags
+}
