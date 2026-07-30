@@ -18,6 +18,8 @@ exclude-queries:
   - "12ed526f-2f75-4c96-b83c-2dd0c8b47b76"  # IAM policy allows write actions without constraints — see suppressions.md
   - "1e434b58-e0b7-4a5c-9c1f-5f30a2f6a1c9"  # IAM policy has wildcard resource — see suppressions.md
   - "8d7f5065-8c66-4d5c-9e37-3fb99d38c5c7"  # SNS topic policy allows service principal without explicit source ARN condition — see suppressions.md
+  - "7ebc9038-0bde-479a-acc4-6ed7b6758899"  # KMS key root-admin policy uses kms:* — see suppressions.md
+  - "482b7d26-0bdb-4b5f-bf6f-545826c0a3dd"  # CloudTrail SNS topic undefined — redundant with EventBridge alerting, see suppressions.md
 
 # Severity levels that should fail the scan.
 fail-on:
@@ -36,3 +38,4 @@ report-formats:
 
 exclude-severities:
   - INFO
+  

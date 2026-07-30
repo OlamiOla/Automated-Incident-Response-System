@@ -192,3 +192,10 @@ resource "aws_kms_alias" "secrets" {
   name          = "alias/${var.project_name}-${var.environment}-secrets"
   target_key_id = aws_kms_key.secrets.key_id
 }
+
+resource "aws_accessanalyzer_analyzer" "main" {
+  analyzer_name = "${var.project_name}-${var.environment}-analyzer"
+  type          = "ACCOUNT"
+
+  tags = var.tags
+}

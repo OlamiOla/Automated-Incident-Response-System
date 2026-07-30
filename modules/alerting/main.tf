@@ -155,6 +155,10 @@ resource "aws_lambda_function" "slack_notifier" {
   filename         = data.archive_file.slack_notifier[0].output_path
   source_code_hash = data.archive_file.slack_notifier[0].output_base64sha256
 
+  tracing_config {
+    mode = "Active"
+  }
+
   environment {
     variables = {
       SLACK_WEBHOOK_SECRET_ARN = aws_secretsmanager_secret.slack_webhook[0].arn

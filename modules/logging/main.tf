@@ -201,3 +201,36 @@ resource "aws_dynamodb_table" "incidents" {
 
   tags = var.tags
 }
+
+resource "aws_s3_bucket" "access_logs" {
+  bucket = "${var.log_archive_bucket_name}-access-logs"
+
+  tags = var.tags
+}
+
+resource "aws_s3_bucket_public_access_block" "access_logs" {
+  bucket = aws_s3_bucket.access_logs.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "access_logs" {
+  bucket = aws_s3_bucket.access_logs.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm     = "aws:kms"
+      kms_master_key_id = var.kms_key_arn
+    }
+  }
+}
+
+resource "aws_s3_bucket_logging" "log_archive" {
+  bucket = aws_s3_bucket.log_archive.id
+
+  target_bucket = aws_s3_bucket.access_logs.id
+  target_prefix = "access-logs/"
+}

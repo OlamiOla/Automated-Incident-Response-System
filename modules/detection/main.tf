@@ -18,6 +18,8 @@ resource "aws_cloudtrail" "main" {
   is_multi_region_trail         = true
   enable_log_file_validation    = true
   kms_key_id                    = var.kms_key_arn
+  cloud_watch_logs_group_arn    = "${aws_cloudwatch_log_group.cloudtrail[0].arn}:*"
+  cloud_watch_logs_role_arn     = aws_iam_role.cloudtrail_cloudwatch[0].arn
 
   event_selector {
     read_write_type           = "All"
@@ -251,4 +253,44 @@ resource "aws_cloudwatch_event_target" "s3_public_exposure" {
   rule     = aws_cloudwatch_event_rule.s3_public_exposure.name
   arn      = var.eventbridge_target_arns["quarantine_s3"]
   role_arn = var.eventbridge_target_role_arn
+}
+
+resource "aws_cloudwatch_log_group" "cloudtrail" {
+  count             = var.enable_cloudtrail ? 1 : 0
+  name              = "/${var.project_name}/${var.environment}/cloudtrail"
+  retention_in_days = var.flow_log_retention_days
+  kms_key_id        = var.kms_key_arn
+
+  tags = var.tags
+}
+
+resource "aws_iam_role" "cloudtrail_cloudwatch" {
+  count = var.enable_cloudtrail ? 1 : 0
+  name  = "${var.project_name}-${var.environment}-cloudtrail-cw-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "cloudtrail.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
+
+  tags = var.tags
+}
+
+resource "aws_iam_role_policy" "cloudtrail_cloudwatch" {
+  count = var.enable_cloudtrail ? 1 : 0
+  name  = "${var.project_name}-${var.environment}-cloudtrail-cw-policy"
+  role  = aws_iam_role.cloudtrail_cloudwatch[0].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["logs:CreateLogStream", "logs:PutLogEvents"]
+      Resource = "${aws_cloudwatch_log_group.cloudtrail[0].arn}:*"
+    }]
+  })
 }
