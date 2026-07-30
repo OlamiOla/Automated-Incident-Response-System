@@ -1,0 +1,23 @@
+{
+  "version": "0",
+  "id": "d5e6f7a8-9012-34ab-cdef-567890abcdef",
+  "detail-type": "AWS Console Sign In via CloudTrail",
+  "source": "aws.signin",
+  "account": "657024676280",
+  "time": "2026-07-29T03:47:00Z",
+  "region": "us-east-1",
+  "detail": {
+    "eventVersion": "1.08",
+    "eventTime": "2026-07-29T03:47:00Z",
+    "eventName": "ConsoleLogin",
+    "sourceIPAddress": "203.0.113.42",
+    "userIdentity": {
+      "type": "Root",
+      "userName": "root",
+      "accountId": "657024676280"
+    },
+    "additionalEventData": {
+      "MFAUsed": "No"
+    }
+  }
+}

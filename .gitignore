@@ -1,0 +1,61 @@
+# =====================================================
+# TERRAFORM
+# =====================================================
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+!*.auto.tfvars
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# =====================================================
+# TERRAGRUNT
+# =====================================================
+.terragrunt-cache/
+**/.terragrunt-cache/*
+backend_generated.tf
+provider.tf
+
+# =====================================================
+# LAMBDA BUILD ARTIFACTS
+# (created by archive_file data sources in remediation
+# and alerting modules — never commit built zips)
+# =====================================================
+**/.build/*.zip
+**/.build/
+
+# =====================================================
+# GO / TERRATEST
+# =====================================================
+tests/*.test
+tests/vendor/
+*.out
+
+# =====================================================
+# SECRETS / SENSITIVE — belt and suspenders
+# Actual secrets should never reach Terraform at all
+# (Slack webhook is populated out-of-band via CLI), but
+# these patterns catch accidental local files.
+# =====================================================
+*.pem
+*.key
+secrets.auto.tfvars
+.env
+.env.*
+
+# =====================================================
+# OS / EDITOR NOISE
+# =====================================================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp

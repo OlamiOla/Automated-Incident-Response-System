@@ -1,0 +1,21 @@
+{
+  "version": "0",
+  "id": "c4d5e6f7-8901-23ab-cdef-4567890abcde",
+  "detail-type": "Config Rules Compliance Change",
+  "source": "aws.config",
+  "account": "657024676280",
+  "time": "2026-07-29T11:02:00Z",
+  "region": "us-east-1",
+  "detail": {
+    "resourceId": "irs-dev-public-test-bucket",
+    "resourceType": "AWS::S3::Bucket",
+    "configRuleName": "irs-dev-s3-bucket-public-read-prohibited",
+    "newEvaluationResult": {
+      "complianceType": "NON_COMPLIANT",
+      "resultRecordedTime": "2026-07-29T11:02:00Z"
+    },
+    "oldEvaluationResult": {
+      "complianceType": "COMPLIANT"
+    }
+  }
+}

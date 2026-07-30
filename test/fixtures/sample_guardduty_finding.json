@@ -1,0 +1,21 @@
+{
+  "version": "0",
+  "id": "b3a1c2d4-5678-90ab-cdef-1234567890ab",
+  "detail-type": "GuardDuty Finding",
+  "source": "aws.guardduty",
+  "account": "657024676280",
+  "time": "2026-07-29T10:15:00Z",
+  "region": "us-east-1",
+  "detail": {
+    "schemaVersion": "2.0",
+    "accountId": "657024676280",
+    "region": "us-east-1",
+    "type": "UnauthorizedAccess:IAMUser/InstanceCredentialExfiltration.OutsideAWS",
+    "severity": 8.5,
+    "title": "IAM credentials issued to an instance are used from an external IP address.",
+    "description": "Credentials that were only supposed to be used by an EC2 instance are being used from an external IP.",
+    "userName": "ci-deploy-user",
+    "accessKeyId": "AKIAEXAMPLE1234FAKE",
+    "createdAt": "2026-07-29T10:15:00Z"
+  }
+}

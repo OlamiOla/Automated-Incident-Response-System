@@ -1,0 +1,38 @@
+# =====================================================
+# KICS CONFIGURATION
+# Static security/compliance scanning for all Terraform
+# modules in this project. Run via:
+#   kics scan -p modules/ -c config.yml
+# =====================================================
+
+path:
+  - modules/
+
+platform:
+  - terraform
+
+# Exclude specific query (check) IDs that are suppressed with
+# documented justification in suppressions.md. Do not add an ID
+# here without a corresponding entry there.
+exclude-queries:
+  - "12ed526f-2f75-4c96-b83c-2dd0c8b47b76"  # IAM policy allows write actions without constraints — see suppressions.md
+  - "1e434b58-e0b7-4a5c-9c1f-5f30a2f6a1c9"  # IAM policy has wildcard resource — see suppressions.md
+  - "8d7f5065-8c66-4d5c-9e37-3fb99d38c5c7"  # SNS topic policy allows service principal without explicit source ARN condition — see suppressions.md
+
+# Severity levels that should fail the scan.
+fail-on:
+  - HIGH
+  - MEDIUM
+
+# LOW and INFO findings are still reported but don't block CI.
+minimal-ui: false
+verbose: true
+
+output-path: kics-report
+
+report-formats:
+  - json
+  - sarif
+
+exclude-severities:
+  - INFO
