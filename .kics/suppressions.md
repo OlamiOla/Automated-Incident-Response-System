@@ -146,3 +146,18 @@ match exactly. `jsonencode()` was kept over a raw heredoc for
 maintainability (HCL syntax highlighting, trailing-comma safety).
 
 **Reviewed by:** _pending_
+
+---
+
+## Query: S3 Bucket Logging Disabled
+**ID:** `f861041c-8c9f-4156-acfc-5e6e524f5884`
+
+**Where:** `modules/logging/main.tf` — `aws_s3_bucket.access_logs`.
+
+**Why suppressed:** `access_logs` IS the S3 access-logging destination for
+`log_archive`. Enabling logging on a logging-target bucket pointed at
+itself creates a circular write loop. `log_archive` (the actual data
+bucket) has logging correctly enabled and targets `access_logs` — that's
+the intended, complete logging chain.
+
+**Reviewed by:** _pending_

@@ -8,6 +8,7 @@ exclude-queries:
   - "e592a0c5-5bdb-414c-9066-5dba7cdea370"  # IAM Access Analyzer — already created once in kms module
   - "e39f87f5-0abf-488b-864c-63ee1f588140"  # S3 bucket notifications — deliberately not wired, see suppressions.md
   - "4bc4dd4c-7d8d-405e-a0fb-57fa4c31b4d9"  # S3 Bucket Policy Accepts HTTP Requests — false positive, see suppressions.md
+  - "f861041c-8c9f-4156-acfc-5e6e524f5884"  # S3 Bucket Logging Disabled — access_logs is a logging target itself, self-logging would loop
 
 exclude-severities:
   - info
