@@ -113,12 +113,3 @@ variable "eventbridge_target_role_arn" {
   type        = string
 }
 
-variable "config_rules" {
-  default = [
-    "s3-bucket-public-read-prohibited",
-    "s3-bucket-public-write-prohibited",
-    "iam-user-unused-credentials-check",
-    "root-account-mfa-enabled",
-    "restricted-ssh",
-  ]
-}

@@ -9,7 +9,7 @@ dependency "kms" {
   mock_outputs = {
     logs_key_arn = "arn:aws:kms:us-east-1:000000000000:key/mock-logs-key"
   }
-  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init"]
 }
 
 dependency "logging" {
@@ -19,7 +19,7 @@ dependency "logging" {
     log_archive_bucket_name = "mock-log-bucket"
     log_archive_bucket_arn  = "arn:aws:s3:::mock-log-bucket"
   }
-  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init"]
 }
 
 dependency "remediation" {
