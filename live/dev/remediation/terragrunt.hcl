@@ -28,7 +28,7 @@ dependency "alerting" {
   mock_outputs = {
     sns_topic_arn = "arn:aws:sns:us-east-1:000000000000:mock-topic"
   }
-  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init"]
 }
 
 terraform {

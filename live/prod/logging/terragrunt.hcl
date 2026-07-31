@@ -10,7 +10,7 @@ dependency "kms" {
     logs_key_arn     = "arn:aws:kms:us-east-1:000000000000:key/mock-logs-key"
     dynamodb_key_arn = "arn:aws:kms:us-east-1:000000000000:key/mock-dynamodb-key"
   }
-  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init"]
 }
 
 terraform {

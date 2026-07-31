@@ -33,7 +33,7 @@ dependency "remediation" {
     }
     eventbridge_invoke_role_arn = "arn:aws:iam::000000000000:role/mock-eventbridge-role"
   }
-  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init"]
 }
 
 terraform {
