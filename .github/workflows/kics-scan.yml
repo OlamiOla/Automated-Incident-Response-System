@@ -46,18 +46,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
-      - name: Run KICS scan (Docker-pinned image)
+      - name: Run KICS scan
         run: |
-          mkdir -p kics-results
-          docker run --rm \
-            -v "${{ github.workspace }}:/path:ro" \
-            -v "${{ github.workspace }}/kics-results:/output" \
-            checkmarx/kics:v2.1.9@sha256:d28b657224d2a80b1a8b4d26b383a8449e62572651ada6208984abbe1f934b60 \
-            scan \
-            -p /path \
-            -o /output \
-            --report-formats sarif,json \
-            --exclude-paths /path/.git,/path/.github || true
+          docker run --rm -v ${{ github.workspace }}:/path checkmarx/kics:latest scan \
+            --path /path/modules \
+            --config /path/.kics/config.yml \
+            --output-path /path/kics-report-${{ matrix.environment }} \
+            --report-formats json,sarif || true
 
       - name: Upload full KICS results as an artifact
         if: always()
