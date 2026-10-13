@@ -1,5 +1,14 @@
 name: Terragrunt Apply
 
+# The CI plan job runs without real AWS credentials (same as terragrunt-plan.yml)
+# and validates configuration on every push/PR.
+#
+# The apply job is intentionally disabled in CI — it requires a real AWS account,
+# valid OIDC credentials, and a configured S3 backend. To deploy:
+#   1. Configure AWS OIDC as described in the README (Troubleshooting → OIDC).
+#   2. Set the AWS_ROLE_ARN and AWS_REGION repository variables in GitHub.
+#   3. Re-enable the apply job by removing the `if: false` condition below.
+
 on:
   push:
     branches:
@@ -16,7 +25,6 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  id-token: write
   contents: read
   security-events: write
   pull-requests: write
@@ -34,22 +42,83 @@ jobs:
       scan-path: '.'
     permissions:
       contents: read
-      id-token: write
       security-events: write
       actions: read
       pull-requests: write
 
-  apply:
-    name: Apply (prod)
+  plan:
+    name: Plan (prod — no AWS)
     runs-on: ubuntu-latest
-    # NOTE: "development" must be configured under
-    # Settings → Environments → development → Required reviewers.
-    # Add yourself (or a reviewer) there — without this, the environment
-    # tag alone does NOT block the job; it just labels it.
     needs: kics-scan
     defaults:
       run:
         working-directory: live/prod
+
+    env:
+      AWS_ACCESS_KEY_ID: "mock-access-key-id"
+      AWS_SECRET_ACCESS_KEY: "mock-secret-access-key"
+      AWS_DEFAULT_REGION: "us-east-1"
+      TG_SKIP_DEPENDENCY_OUTPUTS: "true"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Setup Terragrunt
+        run: |
+          curl -fsSLo terragrunt \
+            "https://github.com/gruntwork-io/terragrunt/releases/download/v${{ env.TERRAGRUNT_VERSION }}/terragrunt_linux_amd64"
+          chmod +x terragrunt
+          sudo mv terragrunt /usr/local/bin/
+          terragrunt --version
+
+      - name: Terragrunt Init (no backend)
+        run: |
+          terragrunt run --all \
+            --terragrunt-non-interactive \
+            --terragrunt-parallelism 1 \
+            -- init -backend=false
+
+      - name: Terragrunt Plan (no backend)
+        run: |
+          set -o pipefail
+          terragrunt run --all \
+            --terragrunt-non-interactive \
+            --terragrunt-parallelism 1 \
+            -- plan -lock=false -input=false 2>&1 | tee plan_output.txt
+
+      - name: Upload plan output
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: terragrunt-apply-plan-output
+          path: live/prod/plan_output.txt
+          retention-days: 30
+          if-no-files-found: warn
+
+  # ---------------------------------------------------------------------------
+  # APPLY — disabled until AWS OIDC is configured.
+  # To enable: remove `if: false`, set AWS_ROLE_ARN and AWS_REGION in GitHub
+  # repository variables, and configure the OIDC trust policy per the README.
+  # ---------------------------------------------------------------------------
+  apply:
+    name: Apply (prod)
+    runs-on: ubuntu-latest
+    if: false  # Remove this line once OIDC is configured
+    needs: [kics-scan, plan]
+    environment: production
+    defaults:
+      run:
+        working-directory: live/prod
+    permissions:
+      id-token: write
+      contents: read
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -71,37 +140,21 @@ jobs:
             "https://github.com/gruntwork-io/terragrunt/releases/download/v${{ env.TERRAGRUNT_VERSION }}/terragrunt_linux_amd64"
           chmod +x terragrunt
           sudo mv terragrunt /usr/local/bin/
-          terragrunt --version
 
       - name: Terragrunt Init
-        id: init
-        run: terragrunt run --all --terragrunt-non-interactive --terragrunt-parallelism 1 -- init
-        continue-on-error: false
-
-      - name: Terragrunt Plan
-        id: plan
         run: |
-          set -o pipefail
-          terragrunt run --all --terragrunt-non-interactive --terragrunt-parallelism 1 -- plan -lock=false 2>&1 | tee plan_output.txt
+          terragrunt run --all \
+            --terragrunt-non-interactive \
+            --terragrunt-parallelism 1 \
+            -- init
 
       - name: Terragrunt Apply
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-        run: terragrunt run --all --terragrunt-non-interactive --terragrunt-parallelism 1 -- apply -auto-approve
-
-      - name: Get Outputs
-        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         run: |
-          set -o pipefail
-          terragrunt run --all --terragrunt-non-interactive --terragrunt-parallelism 1 -- output 2>&1 | tee ../outputs.txt
-
-      - name: Upload Outputs
-        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: live-outputs
-          path: live/outputs.txt
-          retention-days: 30
-          if-no-files-found: warn
+          terragrunt run --all \
+            --terragrunt-non-interactive \
+            --terragrunt-parallelism 1 \
+            -- apply -auto-approve
 
       - name: Notify Slack
         if: always()
