@@ -32,7 +32,6 @@ on:
 permissions:
   contents: read
   security-events: write
-  id-token: write
   pull-requests: write
   actions: read
 
@@ -43,7 +42,6 @@ jobs:
     permissions:
       contents: read
       security-events: write
-      id-token: write
       pull-requests: write
       actions: read
 
