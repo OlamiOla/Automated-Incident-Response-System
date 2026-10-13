@@ -6,15 +6,21 @@ import datetime
 iam = boto3.client("iam")
 dynamodb = boto3.resource("dynamodb")
 sns = boto3.client("sns")
+sts = boto3.client("sts")
 
 REVOKE_POLICY_NAME = "IRS-SessionRevocation"
+
+
+def _get_account_id():
+    """Return the current AWS account ID via STS."""
+    return sts.get_caller_identity()["Account"]
 
 
 def lambda_handler(event, context):
     detail = event.get("detail", {})
     user_identity = detail.get("userIdentity", {})
     user_name = user_identity.get("userName", "unknown")
-    revoke_time = datetime.datetime.utcnow().isoformat() + "Z"
+    revoke_time = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
     deny_policy = {
         "Version": "2012-10-17",
@@ -38,11 +44,13 @@ def lambda_handler(event, context):
         )
         action_taken = "session_revoked"
 
+    account_id = _get_account_id()
+
     table = dynamodb.Table(os.environ["INCIDENT_TABLE_NAME"])
     table.put_item(Item={
         "incident_id": context.aws_request_id,
-        "timestamp": datetime.datetime.utcnow().isoformat(),
-        "resource_arn": f"arn:aws:iam::user/{user_name}",
+        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "resource_arn": f"arn:aws:iam::{account_id}:user/{user_name}",
         "action_taken": action_taken,
         "finding_type": "root_account_login",
     })

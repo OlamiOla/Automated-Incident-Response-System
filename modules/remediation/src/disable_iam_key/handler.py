@@ -5,6 +5,12 @@ import datetime
 iam = boto3.client("iam")
 dynamodb = boto3.resource("dynamodb")
 sns = boto3.client("sns")
+sts = boto3.client("sts")
+
+
+def _get_account_id():
+    """Return the current AWS account ID via STS."""
+    return sts.get_caller_identity()["Account"]
 
 
 def lambda_handler(event, context):
@@ -21,11 +27,13 @@ def lambda_handler(event, context):
         )
         action_taken = "access_key_disabled"
 
+    account_id = _get_account_id()
+
     table = dynamodb.Table(os.environ["INCIDENT_TABLE_NAME"])
     table.put_item(Item={
         "incident_id": context.aws_request_id,
-        "timestamp": datetime.datetime.utcnow().isoformat(),
-        "resource_arn": f"arn:aws:iam::{user_name}:access-key/{access_key_id}",
+        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "resource_arn": f"arn:aws:iam::{account_id}:user/{user_name}",
         "action_taken": action_taken,
         "finding_type": detail.get("type", "unknown"),
     })

@@ -43,7 +43,7 @@ def lambda_handler(event, context):
     table = dynamodb.Table(os.environ["INCIDENT_TABLE_NAME"])
     table.put_item(Item={
         "incident_id": context.aws_request_id,
-        "timestamp": datetime.datetime.utcnow().isoformat(),
+        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "resource_arn": f"arn:aws:s3:::{bucket_name}",
         "action_taken": action_taken,
         "finding_type": detail.get("configRuleName", "unknown"),

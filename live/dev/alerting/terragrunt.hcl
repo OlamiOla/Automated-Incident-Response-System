@@ -4,13 +4,14 @@ include "root" {
 }
 
 dependency "kms" {
-  config_path = "../kms"
+  config_path  = "../kms"
+  skip_outputs = tobool(get_env("TG_SKIP_DEPENDENCY_OUTPUTS", "false"))
 
   mock_outputs = {
     sns_key_arn     = "arn:aws:kms:us-east-1:000000000000:key/mock-sns-key"
     secrets_key_arn = "arn:aws:kms:us-east-1:000000000000:key/mock-secrets-key"
   }
-  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init"]
+  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init", "init-upgrade"]
 }
 
 terraform {

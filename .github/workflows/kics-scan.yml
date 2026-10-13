@@ -1,13 +1,17 @@
 # Runs KICS (Keeping Infrastructure as Code Secure) against every Terraform
-# module in this repo. The KICS scan runs via a Docker-pinned image rather
-# than the checkmarx/kics-github-action marketplace action, after that
-# action was found to be supply-chain compromised (March and April 2026).
+# module in this repo.
 #
-# NOTE: replace <VERIFY_AND_PIN_DIGEST> below with the sha256 digest of the
-# checkmarx/kics image tag you've independently verified, e.g.:
-#   docker pull checkmarx/kics:v2.1.9
-#   docker inspect --format='{{index .RepoDigests 0}}' checkmarx/kics:v2.1.9
-# Never scan with a bare/unverified tag in CI.
+# Since KICS v2.1.21, Checkmarx no longer ships pre-built binaries in GitHub
+# releases (a security hardening decision following the April 2026 Docker Hub
+# supply chain compromise). This workflow builds KICS from source, pinned to
+# a specific verified commit SHA so the build is fully reproducible and
+# tamper-evident.
+#
+# Pinned to: v2.2.0 — commit 453066aa9c66014ad7aee7dd0149ba1944c78050
+# Verified at: https://github.com/Checkmarx/kics/commit/453066aa9c66014ad7aee7dd0149ba1944c78050
+#
+# To upgrade: update KICS_COMMIT to the commit SHA of the new release tag,
+# verify it independently on GitHub, and update the comment above.
 
 name: KICS Security Scan
 
@@ -17,14 +21,14 @@ on:
   push:
     branches: [main]
 
-  workflow_call: 
+  workflow_call:
     inputs:
       scan-path:
         description: 'Path to scan with KICS'
         required: false
         type: string
         default: '.'
-        
+
 permissions:
   contents: read
   security-events: write
@@ -42,16 +46,53 @@ jobs:
       id-token: write
       pull-requests: write
       actions: read
+
+    env:
+      KICS_VERSION: "v2.2.0"
+      # Commit SHA for v2.2.0 tag — verify at:
+      # https://github.com/Checkmarx/kics/releases/tag/v2.2.0
+      KICS_COMMIT: "453066aa9c66014ad7aee7dd0149ba1944c78050"
+      GO_VERSION: "1.24"
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up Go
+        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: false
+
+      - name: Build KICS from pinned source commit
+        run: |
+          set -euo pipefail
+
+          # Clone only the pinned commit — no other history fetched.
+          git clone --no-checkout https://github.com/Checkmarx/kics.git kics-src
+          cd kics-src
+          git checkout "${{ env.KICS_COMMIT }}"
+
+          # Verify the tag matches the commit we pinned.
+          TAG=$(git tag --points-at HEAD)
+          if [ "$TAG" != "${{ env.KICS_VERSION }}" ]; then
+            echo "ERROR: commit ${{ env.KICS_COMMIT }} is tagged '$TAG', expected '${{ env.KICS_VERSION }}'"
+            exit 1
+          fi
+
+          go build -o ../kics ./cmd/console/main.go
+          cd ..
+          sudo mv kics /usr/local/bin/kics
+          kics version
 
       - name: Run KICS scan
         run: |
-          docker run --rm -v ${{ github.workspace }}:/path checkmarx/kics:latest scan \
-            --path /path/modules \
-            --config /path/.kics/config.yml \
-            --output-path /path/kics-report-${{ matrix.environment }} \
+          set -euo pipefail
+          mkdir -p kics-results
+          kics scan \
+            --path "${{ github.workspace }}/modules" \
+            --config "${{ github.workspace }}/.kics/config.yml" \
+            --output-path "${{ github.workspace }}/kics-results" \
             --report-formats json,sarif || true
 
       - name: Upload full KICS results as an artifact
@@ -89,7 +130,6 @@ jobs:
           if sum(counts.values()) > 0:
               print("Failing build: unresolved MEDIUM/HIGH/CRITICAL findings. "
                     "Fix them or document a justified suppression in "
-                    ".kics/config.yml + .kics/SUPPRESSIONS.md.")
+                    ".kics/config.yml + .kics/suppressions.md.")
               sys.exit(1)
           PYEOF
-          

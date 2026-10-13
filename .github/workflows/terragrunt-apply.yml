@@ -23,8 +23,8 @@ permissions:
   actions: read
 
 env:
-  TERRAGRUNT_VERSION: "0.68.4"
-  TERRAFORM_VERSION: "1.11.0"
+  TERRAGRUNT_VERSION: "1.1.6"
+  TERRAFORM_VERSION: "1.16.5"
 
 jobs:
   kics-scan:
@@ -67,32 +67,32 @@ jobs:
 
       - name: Setup Terragrunt
         run: |
-          curl -Lo terragrunt "https://github.com/gruntwork-io/terragrunt/releases/download/v${{ env.TERRAGRUNT_VERSION }}/terragrunt_linux_amd64"
+          curl -fsSLo terragrunt \
+            "https://github.com/gruntwork-io/terragrunt/releases/download/v${{ env.TERRAGRUNT_VERSION }}/terragrunt_linux_amd64"
           chmod +x terragrunt
           sudo mv terragrunt /usr/local/bin/
           terragrunt --version
 
       - name: Terragrunt Init
         id: init
-        run: terragrunt run-all init --terragrunt-non-interactive --terragrunt-parallelism 1
+        run: terragrunt run --all --terragrunt-non-interactive --terragrunt-parallelism 1 -- init
         continue-on-error: false
 
       - name: Terragrunt Plan
         id: plan
         run: |
           set -o pipefail
-          terragrunt run-all plan --terragrunt-non-interactive --terragrunt-parallelism 1 -lock=false 2>&1 | tee plan_output.txt
-
+          terragrunt run --all --terragrunt-non-interactive --terragrunt-parallelism 1 -- plan -lock=false 2>&1 | tee plan_output.txt
 
       - name: Terragrunt Apply
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-        run: terragrunt run-all apply --terragrunt-non-interactive --terragrunt-parallelism 1 --auto-approve
+        run: terragrunt run --all --terragrunt-non-interactive --terragrunt-parallelism 1 -- apply -auto-approve
 
       - name: Get Outputs
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         run: |
-           set -o pipefail
-           terragrunt run-all get outputs --terragrunt-non-interactive --terragrunt-parallelism 1 -- output 2>&1 | tee outputs.txt
+          set -o pipefail
+          terragrunt run --all --terragrunt-non-interactive --terragrunt-parallelism 1 -- output 2>&1 | tee ../outputs.txt
 
       - name: Upload Outputs
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
@@ -109,8 +109,7 @@ jobs:
         with:
           payload: |
             {
-              "text": "Terragrunt apply to dev: ${{ job.status }}"
+              "text": "Terragrunt apply to prod: ${{ job.status }}"
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          

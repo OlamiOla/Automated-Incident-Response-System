@@ -4,31 +4,34 @@ include "root" {
 }
 
 dependency "kms" {
-  config_path = "../kms"
+  config_path  = "../kms"
+  skip_outputs = tobool(get_env("TG_SKIP_DEPENDENCY_OUTPUTS", "false"))
 
   mock_outputs = {
     logs_key_arn = "arn:aws:kms:us-east-1:000000000000:key/mock-logs-key"
   }
-  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init"]
+  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init", "init-upgrade"]
 }
 
 dependency "logging" {
-  config_path = "../logging"
+  config_path  = "../logging"
+  skip_outputs = tobool(get_env("TG_SKIP_DEPENDENCY_OUTPUTS", "false"))
 
   mock_outputs = {
     incident_table_name = "mock-incidents"
     incident_table_arn  = "arn:aws:dynamodb:us-east-1:000000000000:table/mock-incidents"
   }
-  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init"]
+  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init", "init-upgrade"]
 }
 
 dependency "alerting" {
-  config_path = "../alerting"
+  config_path  = "../alerting"
+  skip_outputs = tobool(get_env("TG_SKIP_DEPENDENCY_OUTPUTS", "false"))
 
   mock_outputs = {
     sns_topic_arn = "arn:aws:sns:us-east-1:000000000000:mock-topic"
   }
-  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init"]
+  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init", "init-upgrade"]
 }
 
 terraform {

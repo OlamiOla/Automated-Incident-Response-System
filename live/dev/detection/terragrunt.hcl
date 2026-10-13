@@ -4,26 +4,29 @@ include "root" {
 }
 
 dependency "kms" {
-  config_path = "../kms"
+  config_path  = "../kms"
+  skip_outputs = tobool(get_env("TG_SKIP_DEPENDENCY_OUTPUTS", "false"))
 
   mock_outputs = {
     logs_key_arn = "arn:aws:kms:us-east-1:000000000000:key/mock-logs-key"
   }
-  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init"]
+  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init", "init-upgrade"]
 }
 
 dependency "logging" {
-  config_path = "../logging"
+  config_path  = "../logging"
+  skip_outputs = tobool(get_env("TG_SKIP_DEPENDENCY_OUTPUTS", "false"))
 
   mock_outputs = {
     log_archive_bucket_name = "mock-log-bucket"
     log_archive_bucket_arn  = "arn:aws:s3:::mock-log-bucket"
   }
-  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init"]
+  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init", "init-upgrade"]
 }
 
 dependency "remediation" {
-  config_path = "../remediation"
+  config_path  = "../remediation"
+  skip_outputs = tobool(get_env("TG_SKIP_DEPENDENCY_OUTPUTS", "false"))
 
   mock_outputs = {
     playbook_arns = {
@@ -33,7 +36,7 @@ dependency "remediation" {
     }
     eventbridge_invoke_role_arn = "arn:aws:iam::000000000000:role/mock-eventbridge-role"
   }
-  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init"]
+  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init", "init-upgrade"]
 }
 
 terraform {

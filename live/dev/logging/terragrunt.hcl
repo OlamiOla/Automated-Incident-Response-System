@@ -4,13 +4,14 @@ include "root" {
 }
 
 dependency "kms" {
-  config_path = "../kms"
+  config_path  = "../kms"
+  skip_outputs = tobool(get_env("TG_SKIP_DEPENDENCY_OUTPUTS", "false"))
 
   mock_outputs = {
     logs_key_arn     = "arn:aws:kms:us-east-1:000000000000:key/mock-logs-key"
     dynamodb_key_arn = "arn:aws:kms:us-east-1:000000000000:key/mock-dynamodb-key"
   }
-  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init"]
+  mock_outputs_allowed_terraform_commands = ["validate", "plan", "init", "init-upgrade"]
 }
 
 terraform {
